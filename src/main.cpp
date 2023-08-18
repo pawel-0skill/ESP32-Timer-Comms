@@ -6,6 +6,16 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
 // No Comms address yet - but we will set two later, to ping Gates
 
 // Define message structure
@@ -50,7 +60,11 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     startMillis = millis();
     startEventFlag = 1;
     finishEventFlag = 0;
+    display.clearDisplay();
+    display.setCursor(0, 10);
     Serial.print("Start! ... ");
+    display.print("Start! ... ");
+    display.display(); 
     //Serial.println(startMillis);
   } else if (strcmp(gateMessage.messageType, "E") == 0 && strcmp(gateMessage.gateType, "F") == 0 && finishEventFlag == 0) {
     finishMillis = millis();
@@ -59,8 +73,12 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
     runTimeMillis = finishMillis - startMillis;
     runTimeSeconds = runTimeMillis / 1000.0;
     Serial.print("Finish! Time: ");
+    display.print("Finish! Time: ");
+    display.display(); 
     //Serial.println(finishMillis);
     Serial.println(runTimeSeconds, 3);
+    display.println(runTimeSeconds, 3);
+    display.display(); 
   } else {
   //  Serial.println("WTF xD");
   }
@@ -85,6 +103,20 @@ void setup() {
   // Once ESPNow is successfully Init, we will register for recv CB to
   // get recv packer info
   esp_now_register_recv_cb(OnDataRecv);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+  delay(2000);
+  display.clearDisplay();
+
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  // Display static text
+  display.println("Hello, world!");
+  display.display(); 
 }
  
 void loop() {
